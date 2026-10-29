@@ -1,0 +1,25 @@
+[project]
+name = "t2xpress-mcp"
+version = "0.1.0"
+description = "MCP server driving DekTec T2Xpress DVB-T2 signal generation via its WinForms UI"
+requires-python = ">=3.10"
+dependencies = [
+    "fastmcp>=3.0",
+    "pywinauto>=0.6.9",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[project.scripts]
+t2xpress-mcp = "t2xpress_mcp.__main__:main"
+
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

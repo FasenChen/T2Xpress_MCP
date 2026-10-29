@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModulationParameters xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xsi:noNamespaceSchemaLocation="DVB-T2ParamSchema.xsd">
+  <DvbT2>
+    <General bandwidth="bw_8" bandwidth_ext="true" fft_mode="fft_16k" guard_itv="gi_19_128" l1_modulation="qam16" l1_repetition="false" pilot="3" papr="none" miso="none" nw_id="12421" t2_system_id="32769" cell_id="0" l1_ext_len="0" l1_ext_data_type="pad" t2_version="v1_2_1" />
+    <T2Frame num_t2_frames="2" num_subslices="270" num_data_syms="59" scheduling="static_sched" rbm_validation="false" />
+    <Rf start_rf_idx="0">
+      <Channel freq="666000000" />
+    </Rf>
+    <Papr ace_enable="false" ace_v_clip="1" ace_g="0" ace_l="0.7" ace_interop_factor="4" tr_enable="true" tr_v_clip="4.32" tr_max_iterations="1" tr_p2_only="true" l1_ace_enable="true" tr_algorithm="improved" l1_ace_cmax="0" l1_scrambling="false" num_bias_balancing_cells="0" bias_balancing="on" />
+    <Fef enable="false" type="0" s1="2" s2="1" signal="sig_zero" length="650000" interval="6" />
+    <Aux num_streams="0" />
+    <Plp format="0" plp_id="0" group_id="0" type="type_2" modulation="qam256" code_rate="cr_2_3" fec_type="ldpc_64k" frame_interval="1" time_il_length="1" time_il_type="0" first_frame_idx="0" hem="true" issy="issy_3" issy_bufs="2097152" issy_t_design="1143097" null_packet_deletion="false" rotation="false" in_band_signalling="true" ff_flag="false" first_rf_idx="0" num_blocks="30" in_band_b_flag="false" compensating_delay="-1">
+      <Source ts_rate="9999957">
+        <TsFile in_file="C:\Data\MPLP_Plugfest\100622_1_berlinK51_256QAM_input_PLP0.ts" />
+      </Source>
+    </Plp>
+    <Plp format="0" plp_id="1" group_id="1" type="type_2" modulation="qam16" code_rate="cr_3_5" fec_type="ldpc_64k" frame_interval="1" time_il_length="1" time_il_type="0" first_frame_idx="0" hem="true" issy="issy_3" issy_bufs="2097152" issy_t_design="1143097" null_packet_deletion="false" rotation="false" in_band_signalling="true" ff_flag="false" first_rf_idx="0" num_blocks="32" in_band_b_flag="false" compensating_delay="-1">
+      <Source ts_rate="9999958">
+        <TsFile in_file="C:\Data\MPLP_Plugfest\100622_1_berlinK51_16QAM_input_PLP1.ts" />
+      </Source>
+    </Plp>
+  </DvbT2>
+  <ChannelModelling enable="false" paths_enable="false" />
+  <ChannelModelling enable="false" paths_enable="false" />
+  <IqOutput iq_format="rf" gain="5000" num_super_frames="4" basename="C:\DekTec\T2Xpress\Output\VV463" t2mi_pid="0" t2mi_pcr_pid="-1" t2mi_pmt_pid="-1" t2mi_rate="40000000" t2mi_timestamping="none" t2mi_timeoffset="50000" t2mi_ext_tref_enable="false" t2mi_encode_fef="true" outp_serial="4115001112" outp_port="2" outp_rf_channel="666" outp_rf_level="-20" outp_ip_ip0="192" outp_ip_ip1="168" outp_ip_ip2="1" outp_ip_ip3="100" outp_ip_port="1234" outp_ip_ttl="1" outp_ip_tppip="7" outp_ip_fecmode="0" outp_ip_protocol="udp" />
+</ModulationParameters>

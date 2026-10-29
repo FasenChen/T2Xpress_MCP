@@ -1,0 +1,8 @@
+{
+  "_说明": "T2Xpress MCP 配置。修改后重启 MCP 客户端生效。",
+  "t2xpress_path": "C:/Program Files (x86)/DekTec/T2Xpress/T2Xpress.exe",
+  "stop_exe_path": "C:/Program Files (x86)/DekTec/T2Xpress/StopT2Generation.exe",
+  "presets_dir": "D:/T2Xpress_MCP/research/t2xpress_install/configs/T2Xpress configs",
+  "startup_timeout_sec": 60,
+  "state_timeout_sec": 20
+}

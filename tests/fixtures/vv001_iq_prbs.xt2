@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModulationParameters xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xsi:noNamespaceSchemaLocation="DVB-T2ParamSchema.xsd">
+  <DvbT2>
+    <General bandwidth="bw_8" bandwidth_ext="true" fft_mode="fft_32k" guard_itv="gi_1_128" l1_modulation="qam64" l1_repetition="false" l1_change_counter="0" pilot="7" papr="none" miso="none" nw_id="12421" t2_system_id="32769" cell_id="0" l1_ext_len="0" l1_ext_data_type="pad" t2_version="v1_1_1" t2_profile="t2_base" t2_base_lite="false" />
+    <T2Frame num_t2_frames="2" num_subslices="1" num_data_syms="59" rbm_validation="false" />
+    <Rf start_rf_idx="0">
+      <Channel freq="666000000" />
+    </Rf>
+    <Papr ace_enable="false" ace_v_clip="1" ace_g="0" ace_l="0.7" ace_interop_factor="4" tr_enable="false" tr_v_clip="1" tr_max_iterations="1" tr_p2_only="false" l1_ace_enable="false" tr_algorithm="improved" l1_ace_cmax="0.1" l1_scrambling="false" num_bias_balancing_cells="0" bias_balancing="on" />
+    <Fef enable="false" type="0" s1="2" s2="1" signal="sig_zero" length="78848" interval="2" />
+    <Aux num_streams="0" />
+    <Plp format="0" plp_id="0" group_id="0" type="type_1" modulation="qam256" code_rate="cr_3_5" fec_type="ldpc_64k" frame_interval="1" time_il_length="3" time_il_type="0" first_frame_idx="0" hem="true" issy="none" issy_bufs="0" issy_t_design="0" null_packet_deletion="false" rotation="true" in_band_signalling="false" ff_flag="false" first_rf_idx="0" num_blocks="202" in_band_b_flag="false" compensating_delay="-1">
+      <Source ts_rate="0">
+        <Prbs pid="4096" p="0" q="0" />
+      </Source>
+    </Plp>
+  </DvbT2>
+  <ChannelModelling enable="false" paths_enable="false" />
+  <ChannelModelling enable="false" paths_enable="false" />
+  <IqOutput iq_format="iq_int16_bin" gain="5000" num_super_frames="1" append_files="false" t2mi_pid="4096" t2mi_streamid="0" t2mi_pid2="4097" t2mi_streamid2="0" t2mi_pcr_pid="-1" t2mi_pmt_pid="-1" t2mi_rate="0" t2mi_timestamping="none" t2mi_timeoffset="50000" t2mi_ext_tref_enable="false" t2mi_encode_fef="true" outp_serial="-1" outp_port="-1" outp_rf_channel="0" outp_rf_level="-27" outp_ip_ip0="192" outp_ip_ip1="168" outp_ip_ip2="1" outp_ip_ip3="100" outp_ip_port="1234" outp_ip_ttl="1" outp_ip_tppip="7" outp_ip_fecmode="0" outp_ip_protocol="udp" />
+</ModulationParameters>
