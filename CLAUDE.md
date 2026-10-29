@@ -24,6 +24,7 @@ pytest
   （对齐 StreamXpress MCP 的最小播放面）。工具名不带前缀。配置解析/生成等能力
   仍在 `settings.py`，不再暴露为工具。
 - **播出 = 启动进程**：`driver.start(config)` 用 `-f` 启动即播出；不要再依赖“点 Generate”。
+- **跨 stdio 生命周期**：Windows 通过 PowerShell/CIM WMI 创建播放器，避开 MCP 的 kill-on-close Job Object；不能改回直接 Popen 或仅依赖 DETACHED_PROCESS。关闭 MCP 不停播，仍需显式 stop。
 - **状态判定**：生成中 = Generate 按钮（`toolStripButton4`）禁用 + Cancel 按钮
   （`toolStripButton2`）启用；结束/空闲时反转。状态栏 `statusStrip1` 显示参数有效性。
 - **停止**：`File → Cancel generation` 只有在窗口获得前台焦点时才可靠；后台 MCP 会话

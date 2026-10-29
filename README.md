@@ -151,6 +151,13 @@ get_status() -> dict
 | `NOT_RUNNING` | T2Xpress 未运行 |
 
 MCP 重启后仍可接管已运行的实例：driver 按窗口标题重新 attach。
+Windows 下通过隐藏的 PowerShell/CIM `Win32_Process.Create` 启动 T2Xpress，
+使播放器不属于 MCP 客户端的 Job Object；每次工具调用后关闭 stdio 会话也不会中断播出。
+T2Xpress 主窗口仍保留供 UIA 读取。断开 MCP 不等于停止 RF，必须显式调用 `stop()`。
+
+新 stdio 会话没有上一会话的内存缓存，因此 `get_status` 的 `settings_path`、`output_mode`
+可能为 `null`，`config` 也可能为空；配置身份以本次 `play` 返回为准，运行状态以实际
+`running`、`generating`、`state`、`parameter_status` 和 `popups` 为准。
 
 ## 示例
 
@@ -189,6 +196,7 @@ stop()         # → state=STOPPED, method=menu 或 closed_app
 | `stop()` 返回 `method=closed_app` | 后台会话点不中菜单，属预期兜底，RF 已随进程退出停止 |
 | 一切 UIA 操作超时 | MCP 不在交互式桌面会话（session 0），改为登录桌面用户下运行 |
 | `play` 报“正在生成中” | 先 `stop()`，再切换配置 |
+| `play` 为 `PLAYING`，新会话却为 `NOT_RUNNING` | 确认使用包含 WMI 启动修复的版本；直接 `Popen` 的播放器会被 Windows MCP 会话清理连带终止 |
 
 ## 开发与测试
 
@@ -197,8 +205,10 @@ pip install -e ".[dev]"
 pytest
 ```
 
-`tests/test_settings.py` 覆盖 `.xt2` 解析、属性补丁、PLP 码流替换、设备覆盖与
-格式保持；GUI 行为（启动/状态/停止）依赖真机，靠手动 E2E 验证。
+`tests/test_settings.py` 覆盖 `.xt2` 解析、属性补丁、PLP 码流替换、设备覆盖与格式保持。
+`tests/test_driver.py` 覆盖启动参数传递、WMI 错误及启动失败清理；
+`tests/test_driver_lifecycle.py` 在 Windows 上用无 RF 的模拟 WinForms 窗口，验证独立
+stdio 会话间的 `play → get_status → stop → 切换配置`。真实 T2Xpress/调制卡仍需现场验证。
 
 ## 仓库结构
 

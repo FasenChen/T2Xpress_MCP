@@ -12,12 +12,16 @@ deterministic state machine:
 from __future__ import annotations
 
 import glob
+import json
 import os
 import re
 import subprocess
 import time
 from pathlib import Path
 
+import win32api
+import win32con
+import win32process
 from pywinauto import Application, Desktop
 
 MAIN_TITLE_RE = re.compile(r"^T2Xpress - ")
@@ -27,13 +31,39 @@ BUTTON_CANCEL = "toolStripButton2"
 STATUS_BAR_ID = "statusStrip1"
 TOOLBAR_ID = "toolStrip1"
 
-_CREATE_FLAGS = 0
-if os.name == "nt":
-    _CREATE_FLAGS = subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
-
-
 class T2XpressError(RuntimeError):
     pass
+
+
+def _start_detached_process(command: list[str], cwd: str) -> int:
+    # WMI keeps the player outside the MCP client's kill-on-close Job Object.
+    script = """
+$ErrorActionPreference = 'Stop'
+[Console]::InputEncoding = [Text.UTF8Encoding]::new()
+[Console]::OutputEncoding = [Text.UTF8Encoding]::new()
+$data = [Console]::In.ReadToEnd() | ConvertFrom-Json
+$startup = New-CimInstance -ClassName Win32_ProcessStartup -ClientOnly -Property @{ShowWindow = [uint16]1}
+Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{
+    CommandLine = $data.command
+    CurrentDirectory = $data.cwd
+    ProcessStartupInformation = $startup
+} | Select-Object ReturnValue, ProcessId | ConvertTo-Json -Compress
+"""
+    completed = subprocess.run(
+        ["powershell.exe", "-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-Command", script],
+        input=json.dumps({"command": subprocess.list2cmdline(command), "cwd": cwd}),
+        capture_output=True, text=True, encoding="utf-8", timeout=15,
+        creationflags=subprocess.CREATE_NO_WINDOW,
+    )
+    if completed.returncode:
+        raise T2XpressError(f"PowerShell 创建进程失败: {completed.stderr.strip()}")
+    result = json.loads(completed.stdout)
+    if not isinstance(result, dict) or type(result.get("ReturnValue")) is not int or result["ReturnValue"] != 0:
+        raise T2XpressError(f"Win32_Process.Create 失败: {result!r}")
+    pid = result.get("ProcessId")
+    if type(pid) is not int or pid <= 0:
+        raise T2XpressError(f"Win32_Process.Create 未返回有效进程 ID: {result!r}")
+    return pid
 
 
 def _click(control) -> None:
@@ -59,7 +89,7 @@ class T2XpressDriver:
         self.stop_exe_path = stop_exe_path or str(Path(exe_path).with_name("StopT2Generation.exe"))
         self.startup_timeout = startup_timeout
         self.state_timeout = state_timeout
-        self._proc: subprocess.Popen | None = None
+        self._process_handle = None
         self._app: Application | None = None
         self._dlg = None
         self._pid: int | None = None
@@ -93,7 +123,7 @@ class T2XpressDriver:
 
     @property
     def running(self) -> bool:
-        if self._proc is not None and self._proc.poll() is not None:
+        if self._process_handle is not None and win32process.GetExitCodeProcess(self._process_handle) != win32con.STILL_ACTIVE:
             return False
         try:
             found = self.find_window()
@@ -120,45 +150,50 @@ class T2XpressDriver:
             config_path = str(Path(config_path).resolve())
         if self.running:
             if config_path is not None and self.config_path != config_path:
-                self.close()
+                if not self.close()["ok"]:
+                    raise T2XpressError("T2Xpress 未能关闭，不能启动新的播出")
             else:
                 return
+        self._reset()
         args = [self.exe_path]
         if config_path:
             args += ["-f", config_path]
-        self._proc = subprocess.Popen(
-            args,
-            cwd=str(Path(self.exe_path).parent),
-            creationflags=_CREATE_FLAGS,
+        launched_pid = _start_detached_process(args, cwd=str(Path(self.exe_path).parent))
+        self._process_handle = win32api.OpenProcess(
+            win32con.PROCESS_QUERY_INFORMATION | win32con.PROCESS_TERMINATE, False, launched_pid,
         )
-        found = self.find_window(self.startup_timeout)
-        if not found:
-            code = self._proc.poll()
-            popups = self._popups_for_pid(self._proc.pid)
+        try:
+            found = self.find_window(self.startup_timeout)
+            if not found:
+                code = win32process.GetExitCodeProcess(self._process_handle)
+                popups = self._popups_for_pid(launched_pid)
+                detail = ("；弹窗: " + " || ".join(popups)) if popups else ""
+                raise T2XpressError(
+                    f"T2Xpress 启动后未出现主窗口（退出码 {code}）{detail}。"
+                    "常见原因：设置文件路径无效或被改写。"
+                )
+            pid, _ = found
+            self._pid = pid
+            self._app = Application(backend="uia").connect(process=pid, timeout=15)
+            self._dlg = self._app.window(title_re=TITLE_RE)
+            # WinForms does not always report "ready" to UIA; poll the controls instead.
+            deadline = time.time() + 30
+            while time.time() < deadline:
+                try:
+                    self._state()
+                    break
+                except Exception:
+                    time.sleep(0.25)
+            else:
+                raise T2XpressError("T2Xpress 窗口已出现，但工具栏控件不可用")
+            self.config_path = config_path
+        except BaseException:
             try:
-                self._proc.terminate()
-            except Exception:
-                pass
-            detail = ("；弹窗: " + " || ".join(popups)) if popups else ""
-            raise T2XpressError(
-                f"T2Xpress 启动后未出现主窗口（退出码 {code}）{detail}。"
-                "常见原因：设置文件路径无效或被改写。"
-            )
-        pid, _ = found
-        self._pid = pid
-        self._app = Application(backend="uia").connect(process=pid, timeout=15)
-        self._dlg = self._app.window(title_re=TITLE_RE)
-        # WinForms does not always report "ready" to UIA; poll the controls instead.
-        deadline = time.time() + 30
-        while time.time() < deadline:
-            try:
-                self._state()
-                break
-            except Exception:
-                time.sleep(0.25)
-        else:
-            raise T2XpressError("T2Xpress 窗口已出现，但工具栏控件不可用")
-        self.config_path = config_path
+                if win32process.GetExitCodeProcess(self._process_handle) == win32con.STILL_ACTIVE:
+                    win32api.TerminateProcess(self._process_handle, 1)
+            finally:
+                self._reset()
+            raise
         # NOTE: `-f` starts generation immediately (observed v2.9.0), so we must
         # not wait for idle here — a long RF run never becomes idle.
 
@@ -203,7 +238,9 @@ class T2XpressDriver:
         return {"ok": not running, "status": "closed" if not running else "still_running", "pid": pid}
 
     def _reset(self) -> None:
-        self._proc = None
+        if self._process_handle is not None:
+            self._process_handle.Close()
+            self._process_handle = None
         self._app = None
         self._dlg = None
         self._pid = None
